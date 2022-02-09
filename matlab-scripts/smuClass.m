@@ -33,7 +33,7 @@ classdef smuClass < handle
      
      function setCurrentLimit(this,Ilim)
           serialCMD = "";
-          serialCMD = sprintf('%s:SENS:CURR:PROT %2.3f\r', serialCMD,Ilim);
+          serialCMD = sprintf('%s:SENS:CURR:PROT %2.4f\r', serialCMD,Ilim);
           fwrite(this.smucom, serialCMD);
      end
         

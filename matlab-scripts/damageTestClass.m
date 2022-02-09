@@ -36,15 +36,19 @@ classdef damageTestClass < handle
         function beamWidthMeasure(this,testName,runNum)
             %%%get the beam width of the beam
             
+            %%% zero the beam
+            this.linear.setPosition(9);
+            pause(1);
+            
             %turn on laser
-            this.laser.setCurrent(3.0);
+            this.laser.setCurrent(2.0);
             this.smu.setVoltage(0);
-            this.hwplate.setAngle(45);
+            this.hwplate.setAngle(0);
             this.shutter.ON();
             
-            pos_start = 4;
-            pos_end = 6.0;
-            pos_step = 0.05;
+            pos_start = 8.5; %mm
+            pos_end = 9.5;
+            pos_step = 0.01;
             
             posSweepPts = int32((pos_end-pos_start)/pos_step);
             powerArr = zeros(1,posSweepPts);
@@ -229,11 +233,11 @@ classdef damageTestClass < handle
         end
         
         %%%IV sweep of the device
-        function IV(this,testName,runNum)
+        function roughIV(this,testName,runNum)
             
-            startBias = 35;
-            endBias = 44;
-            stepBias =0.1;
+            startBias = 10;
+            endBias = 50;
+            stepBias = 2;
             
            biasSweepPts = int32(abs((endBias-startBias)/stepBias));
             
@@ -247,6 +251,7 @@ classdef damageTestClass < handle
              %set power
             %laserCurrent = 0;
             %this.laser.setCurrent(laserCurrent);
+            this.smu.setCurrentLimit(0.01);
             this.shutter.ON();
             
             for i = 1:biasSweepPts
@@ -279,20 +284,192 @@ classdef damageTestClass < handle
             this.smu.setVoltage(0);
             
             %calculate gain M=(1-V/Vbr)^-n, n = 0.73
+                        
+        end
+        
+        %%IV fine
+         %%%IV sweep of the device
+        function fineIV(this,testName,runNum)
             
+            startBias = 35;
+            endBias = 45;
+            stepBias = 0.1;
+            
+           biasSweepPts = int32(abs((endBias-startBias)/stepBias));
+            
+            voltageArr = zeros(1,biasSweepPts);
+            currArr = zeros(1,biasSweepPts);
+                        
+            for i = 1:biasSweepPts
+               voltageArr(i) = startBias + (stepBias * single(i-1));
+            end
+            
+             %set power
+            %laserCurrent = 0;
+            %this.laser.setCurrent(laserCurrent);
+            this.smu.setCurrentLimit(0.01);
+            this.shutter.ON();
+            
+            for i = 1:biasSweepPts
+                this.smu.setVoltage(voltageArr(i));
+                currArr(i)=this.smu.readCurrent();
+                pause(1);
+            end
+            
+            %plot figure and save data
+            save(sprintf('%s_%i_voltageArr.mat',testName,runNum), 'voltageArr');
+            save(sprintf('%s_%i_currArr.mat',testName,runNum), 'currArr');
+            
+            set(0,'DefaultAxesFontName', 'Calibri'); % Change default axes fonts.
+            set(0,'DefaultAxesFontSize', 22);
+            set(0,'DefaultTextFontname', 'Calibri'); % Change default text fonts.
+            set(0,'DefaultTextFontSize', 22);
+
+            f1 = figure;
+            sub_f1 = subplot(1,1,1);
+            %yyaxis right;
+            semilogy(voltageArr, currArr, 'r.-', 'DisplayName', 'Power');
+            ylabel('Current (A)');
+            grid on;
+            xlabel('Voltage (V)');
+            print(sprintf('%s_%i_result',testName, runNum), '-djpeg');
+                        
+            %turn the laser off
+            %this.laser.setCurrent(0);
+            this.shutter.OFF();
+            this.smu.setVoltage(0);
+            
+            %calculate gain M=(1-V/Vbr)^-n, n = 0.73
+                        
+        end
+        %%%%
+        
+         %%IV fine
+         %%%IV sweep of the device
+        function veryfineIV(this,testName,runNum)
+            
+            startBias = 40;
+            endBias = 43;
+            stepBias = 0.05;
+            
+           biasSweepPts = int32(abs((endBias-startBias)/stepBias));
+            
+            voltageArr = zeros(1,biasSweepPts);
+            currArr = zeros(1,biasSweepPts);
+                        
+            for i = 1:biasSweepPts
+               voltageArr(i) = startBias + (stepBias * single(i-1));
+            end
+            
+             %set power
+            %laserCurrent = 0;
+            %this.laser.setCurrent(laserCurrent);
+            this.smu.setCurrentLimit(0.001);
+            this.shutter.ON();
+            
+            for i = 1:biasSweepPts
+                this.smu.setVoltage(voltageArr(i));
+                currArr(i)=this.smu.readCurrent();
+                pause(1);
+            end
+            
+            %plot figure and save data
+            save(sprintf('%s_%i_voltageArr.mat',testName,runNum), 'voltageArr');
+            save(sprintf('%s_%i_currArr.mat',testName,runNum), 'currArr');
+            
+            set(0,'DefaultAxesFontName', 'Calibri'); % Change default axes fonts.
+            set(0,'DefaultAxesFontSize', 22);
+            set(0,'DefaultTextFontname', 'Calibri'); % Change default text fonts.
+            set(0,'DefaultTextFontSize', 22);
+
+            f1 = figure;
+            sub_f1 = subplot(1,1,1);
+            %yyaxis right;
+            semilogy(voltageArr, currArr, 'r.-', 'DisplayName', 'Power');
+            ylabel('Current (A)');
+            grid on;
+            xlabel('Voltage (V)');
+            print(sprintf('%s_%i_result',testName, runNum), '-djpeg');
+                        
+            %turn the laser off
+            %this.laser.setCurrent(0);
+            this.shutter.OFF();
+            this.smu.setVoltage(0);
+            
+            %calculate gain M=(1-V/Vbr)^-n, n = 0.73
+                        
+        end
+        
+        
+        
+        %%%get current from the apd in realtime for alignment
+        function apdAlign(this)
+            startTime = 0;
+            endTime = 100;
+            stepTime = 0.25;
+            
+            timeSweepPts = int32(abs((endTime-startTime)/stepTime));
+            timeArr = zeros(1,timeSweepPts);
+            currArr = zeros(1,timeSweepPts);
+            
+            this.smu.setVoltage(41.2);
+            figure;
+            ylabel('APD Current (A)');
+            grid on;
+            xlabel('Time (s)');
+            hold on;
+            grid on;
+            for i = 1:timeSweepPts
+                currArr(i)=this.smu.readCurrent();
+                timeArr(i)= (startTime + stepTime*i);
+                pause(stepTime); %%%seconds
+                plot(timeArr(1:i),currArr(1:i),'-');
+                scatter(timeArr(1:i),currArr(1:i));
+            end
+            this.smu.setVoltage(41.2);
+        end
+        %%%
+        
+        %%%
+        
+        %%%get photocurrent from the apd in realtime for alignment
+        function detectorAlign(this)
+            startTime = 0;
+            endTime = 100;
+            stepTime = 0.25;
+            
+            timeSweepPts = int32(abs((endTime-startTime)/stepTime));
+            timeArr = zeros(1,timeSweepPts);
+            powerArr = zeros(1,timeSweepPts);
+            
+            figure;
+            ylabel('PD Power (W)');
+            grid on;
+            xlabel('Time (s)');
+            hold on;
+            grid on;
+            for i = 1:timeSweepPts
+                powerArr(i)=this.powermeter.readPower();;
+                timeArr(i)= (startTime + stepTime*i);
+                pause(stepTime); %%%seconds
+                plot(timeArr(1:i),powerArr(1:i),'-');
+                scatter(timeArr(1:i),powerArr(1:i));
+            end
             
         end
+        %%%
         
         
         %%%%
         %%%
         function sweepPRF(this,testName,runNum)
             %prfArr = [10,20,30,40,50,100,150,200,250,300,500,1000];
+            %prfArr = [10,100,1000];
             prfArr = [10,100,1000];
                             
             %current sweep
             startCurr = 2.0;
-            endCurr = 4.2;
+            endCurr = 3.2;
             stepCurr =0.2;
             
            currSweepPts = int32(abs((endCurr-startCurr)/stepCurr));
@@ -303,11 +480,14 @@ classdef damageTestClass < handle
             end
             
             powerArr = zeros(length(prfArr),length(currArr));
-            
-            this.ndfilters.moveND1(1);
+           
+            this.ndfilters.moveND1(1); 
             this.ndfilters.moveND2(1);
-            this.hwplate.setAngle(45);
+            this.hwplate.setAngle(0); %deg 0 is max
             this.shutter.ON();
+            %%%%%%
+            this.ndfilters.moveND1(1); %%CHECK!! ONLY for higher powers
+            %%%%%%
             
             for i = 1:length(prfArr)
                 this.laser.setPRF(prfArr(i));
@@ -342,6 +522,7 @@ classdef damageTestClass < handle
             xlabel('Laser Current (A)');
             print(sprintf('%s_%i_result',testName, runNum), '-djpeg');
           
+            this.ndfilters.moveND1(1);
             this.laser.setCurrent(0);
             this.laser.setPRF(10);
                        
@@ -387,7 +568,7 @@ classdef damageTestClass < handle
             %set power
             this.ndfilters.moveND1(1);
             this.ndfilters.moveND2(1);
-            this.hwplate.setAngle(45); %%check the excel sheet 4,
+            this.hwplate.setAngle(0); %%check the excel sheet 4,
             this.shutter.ON();
                         
             for i = 1:length(prfArr)
@@ -403,7 +584,7 @@ classdef damageTestClass < handle
             end
             
             this.laser.setCurrent(0);
-            this.hwplate.setAngle(45);
+            this.hwplate.setAngle(0);
             this.laser.setPRF(10);
             this.smu.setVoltage(0);
             
@@ -437,11 +618,11 @@ classdef damageTestClass < handle
         
         %%%sweep prf and laser current keeping APD at fixed bias
         function sweepPRFandPoweratFixedBias(this,testName,runNum)
-            prfArr = [10];%,10];%,50,100,1000];
+            prfArr = [1000];%,10];%,50,100,1000];
                   
             %laser current sweep
-            startCurr = 3.0;
-            endCurr = 4.2;
+            startCurr = 5.0;
+            endCurr = 6.2;
             stepCurr =0.2;
             
            lasercurrSweepPts = int32(abs((endCurr-startCurr)/stepCurr));
@@ -456,9 +637,13 @@ classdef damageTestClass < handle
             %set power
             this.ndfilters.moveND1(1);
             this.ndfilters.moveND2(1);
-            this.hwplate.setAngle(45); %%check the excel sheet 4, 
+            this.hwplate.setAngle(0); %%check the excel sheet 4, 
             this.shutter.ON();
-                   
+            
+            %%%
+            this.smu.setCurrentLimit(0.05); %0.05 A
+            %%%
+            
             % voltage at GAIN=10, V = 42.2
             %increase bias to setpoint
             fprintf("increasing APD bias to M=10 setpoint..\n");
@@ -466,7 +651,7 @@ classdef damageTestClass < handle
              %   this.smu.setVoltage(i);
             %end
             
-            this.smu.setVoltage(40.2); %%%CHANGE THIS
+            this.smu.setVoltage(41.2); %%%CHANGE THIS
             
             fprintf("APD bias at to M=10 setpoint..\n");
             
@@ -476,16 +661,24 @@ classdef damageTestClass < handle
                for j = 1:lasercurrSweepPts
                     fprintf("set laser Current = %f\n",lasercurrArr(j));
                    this.laser.setCurrent(lasercurrArr(j));
-                    pause(5);
-                    currArr(i,j)=this.smu.readCurrent();
-                    pause(1);
+                   this.shutter.ON()
+                   pause(5);
+                   currArr(i,j)=this.smu.readCurrent();
+                   pause(2);
+                    
+                    %%% let the device cool down under zero laser current
+                    %this.laser.setCurrent(0.0);
+                   this.shutter.OFF()
+                   pause(5);
+                    %%% added 01/12/22 to cool down 
                 end
             end
             
             this.laser.setCurrent(0);
-            this.hwplate.setAngle(45);
+            this.hwplate.setAngle(0);
             this.laser.setPRF(10);
             this.smu.setVoltage(0);
+            this.smu.setCurrentLimit(0.001); 
             
             %plot figure and save data
             save(sprintf('%s_%i_lasercurrArr.mat',testName,runNum), 'lasercurrArr');

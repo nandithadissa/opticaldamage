@@ -21,13 +21,13 @@ classdef laserClass < handle
         end
         
         function setCurrent(this,curr)
-            if (curr>=0.0)&&(curr<=5.6)
+            if (curr>=0.0)&&(curr<=6.2)
                 %check if seed laser is on
                 this.current = curr;
                 cmd=sprintf('setp %1.1f',curr);
                 fprintf(">>setting command = %s\n",cmd);
                 fprintf(this.cycom,cmd);
-                pause(10);
+                pause(15);
             else
                 fprintf(">>ERROR Current value is wrong<<\n");
             end
@@ -41,7 +41,7 @@ classdef laserClass < handle
         end
         
         function setPRF(this,PRF)
-            if (PRF >= 10) && (PRF <= 1000)
+            if (PRF >= 10) && (PRF <= 4000)
                 %set the laser PRF
                 fprintf(this.cycom,'setp 0');
                 pause(1);
