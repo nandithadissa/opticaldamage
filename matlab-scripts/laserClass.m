@@ -3,6 +3,7 @@ classdef laserClass < handle
     properties (SetAccess = private)
         cycom;
         current;
+        inPulseMode = true;
     end
     
     methods
@@ -21,7 +22,7 @@ classdef laserClass < handle
         end
         
         function setCurrent(this,curr)
-            if (curr>=0.0)&&(curr<=6.2)
+            if (curr>=0.0)&&(curr<=3.0)
                 %check if seed laser is on
                 this.current = curr;
                 cmd=sprintf('setp %1.1f',curr);
@@ -41,7 +42,7 @@ classdef laserClass < handle
         end
         
         function setPRF(this,PRF)
-            if (PRF >= 10) && (PRF <= 4000)
+            if (PRF >= 10) && (PRF <= 4000) && (this.inPulseMode)
                 %set the laser PRF
                 fprintf(this.cycom,'setp 0');
                 pause(1);
@@ -58,9 +59,19 @@ classdef laserClass < handle
             end
         end
         
+        function setPulse(this)
+            %set the device for pulse operation and set a bit
+            this.inPulseMode = true;
+        end
+        
+        function setCW(this)
+            %set the laser for CW operation
+            this.inPulseMode = false;
+        end
+        
         function setPulseWidth(this,PulseWidth)
             %set the laser pulse width
-            if (PulseWidth >= 6) && (PulseWidth <= 120)
+            if (PulseWidth >= 6) && (PulseWidth <= 120) && (this.inPulseMode)
                 fprintf(">>Setting pulse width");
                  %set the laser PRF
                 fprintf(this.cycom,'setp 0');

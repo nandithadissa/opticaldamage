@@ -37,17 +37,17 @@ classdef damageTestClass < handle
             %%%get the beam width of the beam
             
             %%% zero the beam
-            this.linear.setPosition(9);
+            this.linear.setPosition(0);
             pause(1);
             
             %turn on laser
-            this.laser.setCurrent(2.0);
+            this.laser.setCurrent(1.6);
             this.smu.setVoltage(0);
             this.hwplate.setAngle(0);
             this.shutter.ON();
             
-            pos_start = 8.5; %mm
-            pos_end = 9.5;
+            pos_start = 1.0; %mm
+            pos_end = 2.0;
             pos_step = 0.01;
             
             posSweepPts = int32((pos_end-pos_start)/pos_step);
@@ -86,7 +86,7 @@ classdef damageTestClass < handle
                         
             %turn the laser off
             this.laser.setCurrent(0);
-            this.shutter.OFF();
+            %this.shutter.OFF();
             
             %write to a 2D CSV file
             beamdata = [posArr(:) powerArr(:)];
@@ -94,11 +94,87 @@ classdef damageTestClass < handle
                         
         end
         
+        %%%beamwidth measure using the 1x4 APD as the source
+        function beamWidthMeasureUsing1by4APD(this,testName,runNum)
+            %%%get the beam width of the beam
+            
+            %%% zero the beam
+            this.linear.setPosition(0);
+            pause(1);
+            
+            %turn on laser
+            this.laser.setCurrent(1.4);
+            this.smu.setVoltage(44.2); %%change this if needed
+            this.smu.setCurrentLimit(0.001);
+            this.hwplate.setAngle(0);
+            this.shutter.ON();
+            
+            pos_start = 5.2; %mm
+            pos_end = 5.4;
+            pos_step = 0.005;
+            
+            posSweepPts = int32((pos_end-pos_start)/pos_step);
+            powerArr = zeros(1,posSweepPts);
+            posArr = zeros(1,posSweepPts);
+            
+            for i = 1:posSweepPts
+               posArr(i) = pos_start + (pos_step * single(i-1));
+            end
+            
+            figure;
+            grid on;
+            ylabel('1x4 APD photocurrent (A)');
+            grid on;
+            xlabel('Linear Stage Position [mm]');
+            hold on;
+            grid on;
+            
+            
+            for i = 1:posSweepPts
+                this.linear.setPosition(posArr(i));
+                powerArr(i)=this.smu.readCurrent();
+                %update the posArr with the actual encorder position
+                posArr(i) = this.linear.getPosition();
+                plot(posArr(1:i), powerArr(1:i));
+                scatter(posArr(1:i), powerArr(1:i));
+                pause(0.3);
+            end
+            
+            %plot figure and save data
+            save(sprintf('%s_%i_posArr.mat',testName,runNum), 'posArr');
+            save(sprintf('%s_%i_powerArr.mat',testName,runNum), 'powerArr');
+            
+            set(0,'DefaultAxesFontName', 'Calibri'); % Change default axes fonts.
+            set(0,'DefaultAxesFontSize', 22);
+            set(0,'DefaultTextFontname', 'Calibri'); % Change default text fonts.
+            set(0,'DefaultTextFontSize', 22);
+
+            %f1 = figure;
+            %sub_f1 = subplot(1,1,1);
+            %yyaxis right;
+            %plot(posArr, powerArr, 'r.-', 'DisplayName', 'Power');
+            %ylabel('1x4 APD photocurrent (A)');
+            %grid on;
+            %xlabel('Linear Stage Position [mm]');
+            print(sprintf('%s_%i_result',testName, runNum), '-djpeg');
+                        
+            %turn the laser off
+            this.laser.setCurrent(0);
+            this.smu.setVoltage(0);
+            %this.shutter.OFF();
+            
+            %write to a 2D CSV file
+            beamdata = [posArr(:) powerArr(:)];
+            csvwrite(sprintf('%s_%i_beamwidth.txt',testName,runNum),beamdata);
+                        
+        end
+        %%%
+        
         function HWTest(this,testName,runNum)
             %%%rotate the hwplate and orient the P polarization from laser
             
             %turn on laser
-            this.laser.setCurrent(1.0);
+            this.laser.setCurrent(2.0);
             this.smu.setVoltage(0);
             
             ang_start=0;
@@ -251,8 +327,8 @@ classdef damageTestClass < handle
              %set power
             %laserCurrent = 0;
             %this.laser.setCurrent(laserCurrent);
-            this.smu.setCurrentLimit(0.01);
-            this.shutter.ON();
+            this.smu.setCurrentLimit(0.001);
+            this.shutter.OFF();
             
             for i = 1:biasSweepPts
                 this.smu.setVoltage(voltageArr(i));
@@ -291,8 +367,8 @@ classdef damageTestClass < handle
          %%%IV sweep of the device
         function fineIV(this,testName,runNum)
             
-            startBias = 35;
-            endBias = 45;
+            startBias = 40;
+            endBias = 50;
             stepBias = 0.1;
             
            biasSweepPts = int32(abs((endBias-startBias)/stepBias));
@@ -307,8 +383,8 @@ classdef damageTestClass < handle
              %set power
             %laserCurrent = 0;
             %this.laser.setCurrent(laserCurrent);
-            this.smu.setCurrentLimit(0.01);
-            this.shutter.ON();
+            this.smu.setCurrentLimit(0.001);
+            this.shutter.OFF();
             
             for i = 1:biasSweepPts
                 this.smu.setVoltage(voltageArr(i));
@@ -406,13 +482,13 @@ classdef damageTestClass < handle
         function apdAlign(this)
             startTime = 0;
             endTime = 100;
-            stepTime = 0.25;
+            stepTime = 0.1;
             
             timeSweepPts = int32(abs((endTime-startTime)/stepTime));
             timeArr = zeros(1,timeSweepPts);
             currArr = zeros(1,timeSweepPts);
             
-            this.smu.setVoltage(41.2);
+            this.smu.setVoltage(44.8);
             figure;
             ylabel('APD Current (A)');
             grid on;
@@ -423,10 +499,10 @@ classdef damageTestClass < handle
                 currArr(i)=this.smu.readCurrent();
                 timeArr(i)= (startTime + stepTime*i);
                 pause(stepTime); %%%seconds
-                plot(timeArr(1:i),currArr(1:i),'-');
+                plot(timeArr(1:i),currArr(1:i),'--');
                 scatter(timeArr(1:i),currArr(1:i));
             end
-            this.smu.setVoltage(41.2);
+            this.smu.setVoltage(0);
         end
         %%%
         
@@ -465,10 +541,10 @@ classdef damageTestClass < handle
         function sweepPRF(this,testName,runNum)
             %prfArr = [10,20,30,40,50,100,150,200,250,300,500,1000];
             %prfArr = [10,100,1000];
-            prfArr = [10,100,1000];
+            prfArr = [100];
                             
             %current sweep
-            startCurr = 2.0;
+            startCurr = 1.0;
             endCurr = 3.2;
             stepCurr =0.2;
             
@@ -481,7 +557,7 @@ classdef damageTestClass < handle
             
             powerArr = zeros(length(prfArr),length(currArr));
            
-            this.ndfilters.moveND1(1); 
+            this.ndfilters.moveND1(1);  
             this.ndfilters.moveND2(1);
             this.hwplate.setAngle(0); %deg 0 is max
             this.shutter.ON();
@@ -618,11 +694,11 @@ classdef damageTestClass < handle
         
         %%%sweep prf and laser current keeping APD at fixed bias
         function sweepPRFandPoweratFixedBias(this,testName,runNum)
-            prfArr = [1000];%,10];%,50,100,1000];
+            prfArr = [100];%,10];%,50,100,1000];
                   
             %laser current sweep
-            startCurr = 5.0;
-            endCurr = 6.2;
+            startCurr = 1.0;
+            endCurr = 3.2;
             stepCurr =0.2;
             
            lasercurrSweepPts = int32(abs((endCurr-startCurr)/stepCurr));
@@ -640,6 +716,10 @@ classdef damageTestClass < handle
             this.hwplate.setAngle(0); %%check the excel sheet 4, 
             this.shutter.ON();
             
+            %%%%%%%%%%%%%%%%%%%
+            this.ndfilters.moveND1(1); %%%%%%Check this
+            %%%%%%%%%%%%%%%%%%%%%
+            
             %%%
             this.smu.setCurrentLimit(0.05); %0.05 A
             %%%
@@ -651,13 +731,25 @@ classdef damageTestClass < handle
              %   this.smu.setVoltage(i);
             %end
             
-            this.smu.setVoltage(41.2); %%%CHANGE THIS
+            this.smu.setVoltage(44.8); %%%CHANGE THIS
             
             fprintf("APD bias at to M=10 setpoint..\n");
+            
+            %create figure
+            figure;
+            ylabel('APD Current (A)');
+            grid on;
+            xlabel('Laser Current (A)');
+            hold on;
+            grid on;
+            
+           
+                 
             
             for i = 1:length(prfArr)
                 fprintf("set laser PRF = %i\n",prfArr(i));
                this.laser.setPRF(prfArr(i));
+               cmd = sprintf("PRF=%i KHz",prfArr(i));
                for j = 1:lasercurrSweepPts
                     fprintf("set laser Current = %f\n",lasercurrArr(j));
                    this.laser.setCurrent(lasercurrArr(j));
@@ -665,7 +757,12 @@ classdef damageTestClass < handle
                    pause(5);
                    currArr(i,j)=this.smu.readCurrent();
                    pause(2);
-                    
+                   
+                   %plot
+                   semilogy(lasercurrArr(1:j), currArr(i,1:j), 'DisplayName', cmd);
+                   scatter(lasercurrArr(1:j), currArr(i,1:j));
+                   %plot
+                   
                     %%% let the device cool down under zero laser current
                     %this.laser.setCurrent(0.0);
                    this.shutter.OFF()
@@ -690,19 +787,20 @@ classdef damageTestClass < handle
             set(0,'DefaultTextFontname', 'Calibri'); % Change default text fonts.
             set(0,'DefaultTextFontSize', 22);
             
-            f1 = figure;
-            sub_f1 = subplot(1,1,1);
-            hold;
+            %f1 = figure;
+            %sub_f1 = subplot(1,1,1);
+            %hold;
             %yyaxis right;
-             for i = 1:length(prfArr)
-                 cmd = sprintf("PRF=%i KHz",prfArr(i));
-                 semilogy(lasercurrArr, currArr(i,:), 'DisplayName', cmd);
-             end
+             %for i = 1:length(prfArr)
+              %   cmd = sprintf("PRF=%i KHz",prfArr(i));
+              %   semilogy(lasercurrArr, currArr(i,:), 'DisplayName', cmd);
+             %end
              
-            legend;
-            ylabel('APD Current (A)');
-            grid on;
-            xlabel('Laser Current (A)');
+            %legend;
+            
+            %ylabel('APD Current (A)');
+            %grid on;
+            %xlabel('Laser Current (A)');
             print(sprintf('%s_%i_result',testName, runNum), '-djpeg');
                  
         end
