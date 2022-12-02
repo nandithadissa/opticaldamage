@@ -6,7 +6,7 @@ classdef smuClass < handle
     
     methods 
         function this = smuClass()
-            this.smucom = serial('COM15','BaudRate', 9600, 'Terminator', 'CR');
+            this.smucom = serial('COM7','BaudRate', 9600, 'Terminator', 'CR');
             set(this.smucom, 'Timeout', 10);
             fopen(this.smucom)
             serialCMD = sprintf('*RST\r');

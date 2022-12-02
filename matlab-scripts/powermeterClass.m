@@ -8,7 +8,7 @@ classdef powermeterClass < handle
     
     methods
         function this = powermeterClass()
-            [this.npusb,this.npdevinfo] = NP_USB_connect('C:\Newport',hex2dec('CEC7'),31);
+            [this.npusb,this.npdevinfo] = NP_USB_connect('C:\Program Files\Newport\Newport USB Driver\Bin',hex2dec('CEC7'),31);
         end
     
         function r = readPower(this)
@@ -18,5 +18,8 @@ classdef powermeterClass < handle
         function r = readWavelength(this)
             r = NP_USB_readLambda(this.npusb, 31);
         end
+
+         function delete(this)
+         end
     end
 end

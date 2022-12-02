@@ -8,7 +8,7 @@ classdef laserClass < handle
     
     methods
         function this = laserClass()
-            this.cycom = serial('COM4','BaudRate', 9600, 'Terminator', 'CR');
+            this.cycom = serial('COM10','BaudRate', 9600, 'Terminator', 'CR');
             set(this.cycom, 'Timeout', 10);
             fopen(this.cycom);
             pause(5);
@@ -22,7 +22,7 @@ classdef laserClass < handle
         end
         
         function setCurrent(this,curr)
-            if (curr>=0.0)&&(curr<=3.0)
+            if (curr>=0.0)&&(curr<=6.2)
                 %check if seed laser is on
                 this.current = curr;
                 cmd=sprintf('setp %1.1f',curr);
@@ -61,11 +61,30 @@ classdef laserClass < handle
         
         function setPulse(this)
             %set the device for pulse operation and set a bit
+            fprintf(">>Setting pulse mode\n");
+            fprintf(this.cycom,'setp 0');
+            pause(1);
+            fprintf(this.cycom,'sp 0');
+            pause(1);
+            fprintf(this.cycom,'mode 1');
+            pause(1);
+            fprintf(this.cycom,'sp 1');
+            pause(1);
             this.inPulseMode = true;
         end
         
         function setCW(this)
             %set the laser for CW operation
+            fprintf(">>Setting CW mode\n");
+            fprintf(this.cycom,'setp 0');
+            pause(1);
+            fprintf(this.cycom,'sp 0');
+            pause(1);
+            fprintf(this.cycom,'mode 0');
+            pause(5);
+            fprintf("turn on laser\n");
+            fprintf(this.cycom,'sp 1');
+            pause(1);
             this.inPulseMode = false;
         end
         
@@ -97,7 +116,6 @@ classdef laserClass < handle
             fprintf("turn off laser power\n");
             fclose(this.cycom);
             delete(this.cycom);
-        end
-         
+        end        
     end
 end

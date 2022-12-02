@@ -7,7 +7,7 @@ classdef ttlClass < handle
     methods 
         function this = ttlClass() 
             %NEW TTL CLASS using the Arduino
-            this.ttlcom = serial('COM20','BaudRate', 9600, 'Terminator', 'CR');
+            this.ttlcom = serial('COM8','BaudRate', 9600, 'Terminator', 'CR');
             set(this.ttlcom, 'Timeout', 10);
             fopen(this.ttlcom)
             %serialCMD = sprintf('*RST\r');
