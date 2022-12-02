@@ -442,7 +442,7 @@ classdef damageTestClass < handle
             this.smu.setCurrentLimit(0.0001);
 
             startBias =20;
-            endBias = 60;
+            endBias = 50;
             stepBias = 5;
             
            biasSweepPts = int32(abs((endBias-startBias)/stepBias)) + 1;
@@ -501,12 +501,12 @@ classdef damageTestClass < handle
             this.smu.setCurrentLimit(0.0001);
 
             startBias =20;
-            endBias = 60;
-            stepBias = 5;
+            endBias = 48;
+            stepBias = 0.5;
 
            %%%%%%%%%%%%%%%%%%%%%%%
            irradiance = zeros(1,1);
-           irradiance(1) = 1; % THIS HAS TO BE MEASURED FIRST [W/cm2]
+           irradiance(1) = 2.5E-2; % THIS HAS TO BE MEASURED FIRST [W/cm2]
            %%% KEEP THE OPTICAL INTENSITY THE SAME AND DO NOT CHANGE IT
            deviceArea = 6160E-8; %[cm2]
            %%%%%%%%%%%%%%%%%%%%%%%
@@ -526,10 +526,13 @@ classdef damageTestClass < handle
 
             this.shutter.OFF(); %%% CHANGE
 
+
+
             f1 = figure;
             sub_f1 = subplot(1,1,1);
             yyaxis right;
-            ylabel('Responsivity [A/W]');
+            %ylabel('Responsivity [A/W]');
+            ylabel('I [A]');
             yyaxis left;
             ylabel('M');
             grid on;
@@ -554,11 +557,13 @@ classdef damageTestClass < handle
                 gainArr(i) = netcurrArr(i)/netcurrArr(1); %% ASSUME M=1 is i=1;
                 responsivityArr(i) = netcurrArr(i)/(deviceArea*irradiance);
                 yyaxis left;
-                plot(voltageArr(1:i),gainArr(1:i));
+                plot(voltageArr(1:i),gainArr(1:i),'--');
                 scatter(voltageArr(1:i),gainArr(1:i));
                 yyaxis right;
-                plot(voltageArr(1:i),responsivityArr(1:i));
-                scatter(voltageArr(1:i),responsivityArr(1:i));
+                %plot(voltageArr(1:i),responsivityArr(1:i),'--');
+                %scatter(voltageArr(1:i),responsivityArr(1:i));
+                semilogy(voltageArr(1:i),darkcurrArr(1:i),'--');
+                %scatter(voltageArr(1:i),darkcurrArr(1:i));
                 pause(0.5);
                 this.shutter.OFF();
             end
@@ -573,7 +578,8 @@ classdef damageTestClass < handle
             save(sprintf('%s_%i_irradiance.mat',testName,runNum), 'irradiance');
 
             yyaxis right;
-            ylabel('Responsivity [A/W]');
+            %ylabel('Responsivity [A/W]');
+            ylabel('Dark Current [A]');
             yyaxis left;
             ylabel('M');
             grid on;
@@ -838,7 +844,7 @@ classdef damageTestClass < handle
             timeArr = zeros(1,timeSweepPts);
             currArr = zeros(1,timeSweepPts);
             
-            %this.smu.setVoltage(30.0);  %%%% CHANGE %%% %44.6 
+            this.smu.setVoltage(30.0);  %%%% CHANGE %%% %44.6 
             %this.smu.setCurrentLimit(0.00001); %for strong signal quench measurements
 
             figure;
