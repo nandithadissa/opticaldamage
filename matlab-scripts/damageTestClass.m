@@ -493,6 +493,113 @@ classdef damageTestClass < handle
                         
         end
 
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%% find gain of a sensor with low optical bias
+          %%%IV sweep of the device
+          function findResponsivityandGain(this,testName,runNum)
+            
+            this.smu.setCurrentLimit(0.0001);
+
+            startBias =20;
+            endBias = 60;
+            stepBias = 5;
+
+           %%%%%%%%%%%%%%%%%%%%%%%
+           irradiance = zeros(1,1);
+           irradiance(1) = 1; % THIS HAS TO BE MEASURED FIRST [W/cm2]
+           %%% KEEP THE OPTICAL INTENSITY THE SAME AND DO NOT CHANGE IT
+           deviceArea = 6160E-8; %[cm2]
+           %%%%%%%%%%%%%%%%%%%%%%%
+
+           biasSweepPts = int32(abs((endBias-startBias)/stepBias)) + 1;
+            
+            voltageArr = zeros(1,biasSweepPts);
+            darkcurrArr = zeros(1,biasSweepPts);
+            lightcurrArr = zeros(1,biasSweepPts);
+            netcurrArr = zeros(1,biasSweepPts);
+            gainArr = zeros(1,biasSweepPts);
+            responsivityArr = zeros(1,biasSweepPts);
+                        
+            for i = 1:biasSweepPts
+               voltageArr(i) = startBias + (stepBias * single(i-1));
+            end
+
+            this.shutter.OFF(); %%% CHANGE
+
+            f1 = figure;
+            sub_f1 = subplot(1,1,1);
+            yyaxis right;
+            ylabel('Responsivity [A/W]');
+            yyaxis left;
+            ylabel('M');
+            grid on;
+            grid minor;
+            xlabel('Voltage (V)');
+            set(0,'DefaultAxesFontName', 'Calibri'); % Change default axes fonts.
+            set(0,'DefaultAxesFontSize', 22);
+            set(0,'DefaultTextFontname', 'Calibri'); % Change default text fonts.
+            set(0,'DefaultTextFontSize', 22);
+
+            
+            for i = 1:biasSweepPts
+                this.smu.setVoltage(voltageArr(i));
+                pause(0.1); %% SETTLING TIME
+                this.shutter.OFF(); %%% TAKE DARK MEASUREMENT
+                pause(0.2);
+                darkcurrArr(i)=this.smu.readCurrent();
+                this.shutter.ON(); %%% TAKE LIGHT MEASUREMENT
+                pause(0.2);
+                lightcurrArr(i)=this.smu.readCurrent();
+                netcurrArr(i) = lightcurrArr(i)-darkcurrArr(i);
+                gainArr(i) = netcurrArr(i)/netcurrArr(1); %% ASSUME M=1 is i=1;
+                responsivityArr(i) = netcurrArr(i)/(deviceArea*irradiance);
+                yyaxis left;
+                plot(voltageArr(1:i),gainArr(1:i));
+                scatter(voltageArr(1:i),gainArr(1:i));
+                yyaxis right;
+                plot(voltageArr(1:i),responsivityArr(1:i));
+                scatter(voltageArr(1:i),responsivityArr(1:i));
+                pause(0.5);
+                this.shutter.OFF();
+            end
+            
+            %plot figure and save data
+            save(sprintf('%s_%i_voltageArr.mat',testName,runNum), 'voltageArr');
+            save(sprintf('%s_%i_darkcurrArr.mat',testName,runNum), 'darkcurrArr');
+            save(sprintf('%s_%i_lightcurrArr.mat',testName,runNum), 'lightcurrArr');
+            save(sprintf('%s_%i_netcurrArr.mat',testName,runNum), 'netcurrArr');
+            save(sprintf('%s_%i_gainArr.mat',testName,runNum), 'gainArr');
+            save(sprintf('%s_%i_responsivityArr.mat',testName,runNum), 'responsivityArr');
+            save(sprintf('%s_%i_irradiance.mat',testName,runNum), 'irradiance');
+
+            yyaxis right;
+            ylabel('Responsivity [A/W]');
+            yyaxis left;
+            ylabel('M');
+            grid on;
+            grid minor;
+            xlabel('Voltage (V)')
+           
+            %f1 = figure;
+            %sub_f1 = subplot(1,1,1);
+            %%yyaxis right;
+            %semilogy(voltageArr, currArr, 'r.-', 'DisplayName', 'Power');
+            %ylabel('Current (A)');
+            %grid on;
+            %xlabel('Voltage (V)');
+            print(sprintf('%s_%i_result',testName, runNum), '-djpeg');
+                        
+            %turn the laser off
+            %this.laser.setCurrent(0);
+            this.shutter.OFF();
+            this.smu.setVoltage(0);
+            
+            %calculate gain M=(1-V/Vbr)^-n, n = 0.73
+                        
+        end
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
         %%%%%%%%%%%%%%%%%%%%%%%%%%
         %%% iv recoding the temp
         %%%IV sweep of the device
